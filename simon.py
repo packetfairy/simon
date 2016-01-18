@@ -1,6 +1,7 @@
 from __future__ import print_function 
 from getch import getch
 import random
+import sys
 
 red = 'r'
 yellow = 'y'
@@ -33,11 +34,26 @@ def play(colors, count, board):
     print('enter the colors:')
     for color in colors:
         c += 1
+        # need to implement timer function
+        # hpoing that timer will be easy enough to "cheat" with
+        # something like this:
+        # while time.time() < expired:
+        #     gpio_port_response = check_gpio_ports()
+        #     if gpio_port_response:
+        #         if gpio_port_response != color:
+        #             return incorrect error and exit
+        #     time.sleep(0.01)
+        # else:
+        #     return timeout error and exit
+        #
+        # the alternative seems to be for the timer to live in a thread, but
+        # i think i am not fancy enough to know how to make that work yet.
         user_input = getch()
         if user_input in ['', '!']:
             print('thanks for playing')
-            exit(0)
+            sys.exit(0)
         if user_input != color:
+            print('wrong selection (%s, you chose: %s)' % (color, user_input))
             return False, colors
     # trigger sound play
     #   - name files as USER_COUNT.mp3 for easy play

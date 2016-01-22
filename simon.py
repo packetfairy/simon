@@ -1,6 +1,8 @@
 from __future__ import print_function 
+import RPi.GPIO as GPIO
 from getch import getch
 import random
+import time
 import sys
 
 red = 'r'
@@ -24,12 +26,45 @@ config['bryan'] = { 'board': [ red, white, pink, brightred ] ,
 config['rob'] = { 'board': [ purple, red, purple, blue ] ,
                   'difficulty': 3 }
 
+# GPIO config details
+pin['red'] = 19
+pin['yellow'] = 13
+pin['blue'] = 6
+pin['green'] = 5
+
+switch['red'] = 12
+switch['yellow'] = 16
+switch['blue'] = 20
+switch['green'] = 21
+
+
+def gpio_setup():
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setup(switch.values(), GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+    GPIO.setup(pin.values(), GPIO.OUT)
+
+
+def playcolor(color):
+    GPIO.output(pin[color], True)
+    time.sleep(0.5)
+    GPIO.output(pin[color], False)
+
+
+def monitorswitches(seconds):
+    timeend = time.time() + seconds
+    while time.time() < timeend:
+        for s in switch:
+            if GPIO.input(s) == True:
+                return s
+    return False
+
+
 def play(colors, count, board):
     select = random.randint(0, len(board) - 1)
     color = board[select]
     colors.append(color)
     for color in colors:
-        print(color)
+        playcolor(color)
     c = 0
     print('enter the colors:')
     for color in colors:
@@ -37,6 +72,7 @@ def play(colors, count, board):
         # need to implement timer function
         # hpoing that timer will be easy enough to "cheat" with
         # something like this:
+        # expired = time.time() + some_growing_number_of_seconds
         # while time.time() < expired:
         #     gpio_port_response = check_gpio_ports()
         #     if gpio_port_response:

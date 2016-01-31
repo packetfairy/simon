@@ -8,36 +8,46 @@ import sys
 # color = [red,green,blue]
 # hoping that we can vary the luminosity of each diode so that I
 # can create more than just these seven colors.
-red =    [1, 0, 0]
-yellow = [1, 1, 0]
-white =  [1, 1, 1]
-purple = [1, 0, 1]
-blue =   [0, 0, 1]
-cyan =   [0, 1, 1]
-green =  [0, 1, 0]
+pink = [255, 36, 120]
+red = [255, 36, 36]
+orange = [255, 120, 36]
+yellow = [255, 255, 36]
+limegreen = [120, 255, 36]
+green = [36, 255, 36]
+lightgreen = [36, 255, 120]
+cyan = [36, 255, 255]
+lightblue = [36, 120, 255]
+blue = [36, 36, 255]
+purple = [120, 36, 255]
+magenta = [255, 36, 255]
+white = [255, 255, 255]
 
 # where will this live?
 config = {}
 config['standard'] = { 'board': [red, yellow, blue, green],
-                       'difficulty': 0 }
-config['brian'] = { 'board': [blue, white, cyan, purple],
-                    'difficulty': 1 }
-config['bryan'] = { 'board': [red, white, purple, white],
+                       'difficulty': 1 }
+config['brian'] = { 'board': [blue, white, cyan, lightblue],
                     'difficulty': 2 }
+config['bryan'] = { 'board': [red, white, pink, white],
+                    'difficulty': 3 }
+config['erik'] = { 'board': [yellow, white, orange, blue],
+                   'difficulty': 3 }
+config['nate'] = { 'board': [pink, magenta, cyan, white],
+                   'difficulty': 3 }
 config['rob'] = { 'board': [purple, red, purple, blue],
-                  'difficulty': 3 }
+                  'difficulty': 4 }
 
 # GPIO config details
-LEDS = []
+#LEDS = []
 # LEDS.append([red,green,blue])
-LEDS.append([4, 17, 27])
-LEDS.append([22, 5, 6])
-LEDS.append([13, 19, 26])
-LEDS.append([16, 20, 21])
-LED_SETUP = [pin for led_pins in LEDS for pin in led_pins]
+#LEDS.append([4, 17, 27])
+#LEDS.append([22, 5, 6])
+#LEDS.append([13, 19, 26])
+#LEDS.append([16, 20, 21])
+#LED_SETUP = [pin for led_pins in LEDS for pin in led_pins]
+# we are going to deal with LEDs via serial, rather than GPIO port toggle
 
 SENSORS = [18, 23, 24, 25]
-
 RFID = 12
 
 
@@ -47,7 +57,7 @@ def gpio_setup():
     # I have done the right things and that everything will always
     # work perfectly? :)
     GPIO.setmode(GPIO.BCM)
-    GPIO.setup(LED_SETUP, GPIO.OUT)
+    #GPIO.setup(LED_SETUP, GPIO.OUT)
     GPIO.setup(SENSORS, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
     GPIO.setup(RFID, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
@@ -65,10 +75,12 @@ def playsound(sound):
     print('')
 
 
-def playcolor(color, sound):
-    GPIO.output(color, True)
+def playcolor(duration, color, sound):
+    # send color via serial pulse; does this block?
+    # if so, maybe play sound via something which detaches?
+    #GPIO.output(color, True)
     playsound(sound)  # ensure sound file is sufficient length for LED to light
-    GPIO.output(color, False)
+    #GPIO.output(color, False)
 
 
 def read_rfid_port():
@@ -99,17 +111,34 @@ def play(color_sequence, count, user):
 
     # pick a new color
     board = config[user]['board']
-    select = random.randint(0, len(board) - 1)
+    select = random.choice(board)
     append_color = board[select]
     color_sequence.append(append_color)
 
+    # set our difficulty level and length of time to light the LEDs
+    difficulty = config[user]['difficulty']
+    led_duration = 0.1 + (0.25 / difficulty) - (difficulty/100.0)
+
     # display the colors for the user
     for color in color_sequence:
-        playcolor(color, show_sound)
+        playcolor(led_duration, color, show_sound)
 
-    # set up a timer equal to 1 second plus a half second for every
-    # color after the first
-    expired = time.time() + ( 1 + (count * 0.5) )
+    # set up a timer which increases incrementally, and variably
+    # depending upon difficulty level
+    playtime = 1 + (count * 0.5) + ((count * 0.25) / difficulty)
+    expired = time.time() + playtime
+
+    # example values:                 -----------------play time-----------------
+    # | difficulty level | light time | c=1 | c=2 | c=3 | c=4 | c=5 | c=6 | c=7 |
+    # |        1         |   0.34     | 1.75| 2.5 |3.25 | 4.0 | 4.75| 5.5 | 6.25|
+    # |        2         |   0.205    |1.625| 2.25|2.875| 3.5 |4.125| 4.75|5.375|
+    # |        3         |   0.153    |1.583|2.167| 2.75|3.333|3.917| 4.5 |5.083|
+    # |        4         |   0.123    |1.563|2.123|2.688| 3.25|3.813|4.375|4.938|
+    # on its face, 1.75 seconds for a single depression sounds like a lot to me.
+    # but i guess i want the game to be playable. so that's not so bad. and it
+    # does get increasingly difficult. it should be pretty hard after 4, even for
+    # standard difficulty. in actuality, this might not be enough time, given the
+    # mechanism of interaction with the devices. but we'll see.
 
     # wait for the user to enter the correct sequence
     for color in color_sequence:
@@ -117,10 +146,10 @@ def play(color_sequence, count, user):
             sensor_port_response = read_sensor_ports()
             if sensor_port_response:
                 if sensor_port_response != board.index(color):
-                    playcolor(color, fail_sound)
+                    playcolor(led_duration, color, fail_sound)
                     return False, color_sequence
                 else:
-                    playcolor(color, play_sound)
+                    playcolor(led_duration, color, play_sound)
         else:
             playsound(over_sound)
             return False, color_sequence
@@ -145,4 +174,7 @@ if __name__ == '__main__':
     while True:
         # if RFID receiver registers USER nearby, set and send user as arg
         user = read_rfid_port()
-        rungame(user)
+        try:
+            rungame(user)
+        except KeyboardInterrupt:  # this would be taking a prompt from the "power" button
+            pass

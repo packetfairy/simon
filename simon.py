@@ -1,6 +1,5 @@
 from __future__ import print_function 
 import RPi.GPIO as GPIO
-from getch import getch
 import random
 import time
 import sys

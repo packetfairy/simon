@@ -73,9 +73,9 @@ def playsound(sound):
     print('')
 
 
-def playcolor(duration, color, sound):
-    # send color via serial pulse; does this block?
-    # if so, maybe play sound via something which detaches?
+def playcolor(duration, color, led_position, sound):
+    # send color to led_position via serial pulse; does this block?
+    # if so, maybe play sound first via something which detaches?
     #GPIO.output(color, True)
     playsound(sound)  # ensure sound file is sufficient length for LED to light
     #GPIO.output(color, False)
@@ -119,7 +119,8 @@ def play(color_sequence, count, user):
 
     # display the colors for the user
     for color in color_sequence:
-        playcolor(led_duration, color, show_sound)
+        # our LED position corresponds to the color index on the board
+        playcolor(led_duration, color, board.index(color), show_sound)
 
     # set up a timer which increases incrementally, and variably
     # depending upon difficulty level
@@ -144,10 +145,10 @@ def play(color_sequence, count, user):
             sensor_port_response = read_sensor_ports()
             if sensor_port_response:
                 if sensor_port_response != board.index(color):
-                    playcolor(led_duration, color, fail_sound)
+                    playcolor(led_duration, color, board.index(color), fail_sound)
                     return False, color_sequence
                 else:
-                    playcolor(led_duration, color, play_sound)
+                    playcolor(led_duration, color, board.index(color), play_sound)
         else:
             playsound(over_sound)
             return False, color_sequence

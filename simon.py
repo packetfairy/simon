@@ -1,4 +1,4 @@
-from __future__ import print_function 
+from __future__ import print_function
 import RPi.GPIO as GPIO
 import random
 import time
@@ -22,18 +22,18 @@ white = [255, 255, 255]
 
 # where will this live?
 config = {}
-config['standard'] = { 'board': [red, yellow, blue, green],
-                       'difficulty': 1 }
-config['brian'] = { 'board': [blue, white, cyan, lightblue],
-                    'difficulty': 2 }
-config['bryan'] = { 'board': [red, white, pink, white],
-                    'difficulty': 3 }
-config['erik'] = { 'board': [yellow, white, orange, blue],
-                   'difficulty': 3 }
-config['nate'] = { 'board': [pink, magenta, cyan, white],
-                   'difficulty': 3 }
-config['rob'] = { 'board': [purple, red, purple, blue],
-                  'difficulty': 4 }
+config['standard'] = {'board': [red, yellow, blue, green],
+                      'difficulty': 1}
+config['brian'] = {'board': [blue, white, cyan, lightblue],
+                   'difficulty': 2}
+config['bryan'] = {'board': [red, white, pink, white],
+                   'difficulty': 3}
+config['erik'] = {'board': [yellow, white, orange, blue],
+                  'difficulty': 3}
+config['nate'] = {'board': [pink, magenta, cyan, white],
+                  'difficulty': 3}
+config['rob'] = {'board': [purple, red, purple, blue],
+                 'difficulty': 4}
 
 # GPIO config details
 #LEDS = []
@@ -89,7 +89,7 @@ def read_rfid_port():
 
 def read_sensor_ports():
     for s in SENSORS:
-        if GPIO.input(s) == True:
+        if GPIO.input(s) is True:
             return SENSORS.index(s)
     return False
 

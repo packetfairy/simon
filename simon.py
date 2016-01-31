@@ -94,18 +94,42 @@ def read_sensor_ports():
     return False
 
 
+def celebrate():
+    """i imagine running a full rainbow down the chain while playing
+       some fun celebratory music. this would get used for that point
+       where our player has reached the point where we thought they
+       would never ossibly reach"""
+    return
+
+
 def play(color_sequence, count, user):
+    # ok, so, we want to do a thing where we play different sounds
+    # during each round. but, at a certain point, if we have a
+    # crazy badass player, we will eventually exhaust our available
+    # set of sounds. so, we'll do a check here.
+    #
+    # if need be, we can do the check by os.path.isfile(), like in
+    # the case where we have more files in the set for one user than
+    # we have for another one.
+    #
+    # for now, we'll do it with a basic check.
+    num = count
+    if count == 10:   # we'll assume we have only 10 sets of sound files,
+        celebrate()   # and that this game will be challenging enough that
+    elif count > 10:  # reaching level 10 will be unlikely.
+        num = 10
+
     # define sound file names
     # for when the color is being shown to you
-    show_sound = '%s_%s_%s.wav' % (count, user, 'show')
+    show_sound = '%s/%02d_%s.wav' % (user, num, 'show')
     # for when you select the correct color
-    play_sound = '%s_%s_%s.wav' % (count, user, 'play')
+    play_sound = '%s/%02d_%s.wav' % (user, num, 'play')
     # for when you select the wrong color
-    fail_sound = '%s_%s_%s.wav' % (count, user, 'fail')
+    fail_sound = '%s/%02d_%s.wav' % (user, num, 'fail')
     # for when your game ends
-    over_sound = '%s_%s_%s.wav' % (count, user, 'over')
+    over_sound = '%s/%02d_%s.wav' % (user, num, 'over')
     # for when you pass the round
-    pass_sound = '%s_%s_%s.wav' % (count, user, 'pass')
+    pass_sound = '%s/%02d_%s.wav' % (user, num, 'pass')
 
     # pick a new color
     board = config[user]['board']

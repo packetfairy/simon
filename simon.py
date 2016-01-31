@@ -134,8 +134,7 @@ def play(color_sequence, count, user):
     # pick a new color
     board = config[user]['board']
     select = random.choice(board)
-    append_color = board[select]
-    color_sequence.append(append_color)
+    color_sequence.append(select)
 
     # set our difficulty level and length of time to light the LEDs
     difficulty = config[user]['difficulty']
@@ -188,7 +187,7 @@ def rungame(user):
         count += 1
         (winning, color_sequence) = play(color_sequence, count, user)
     else:
-        print('wah wah! you made it %s rounds!' % count - 1)
+        print('wah wah! you made it %s rounds!' % (count - 1))
         print()
 
 
@@ -200,4 +199,4 @@ if __name__ == '__main__':
         try:
             rungame(user)
         except KeyboardInterrupt:  # this would be taking a prompt from the "power" button
-            pass
+            exit

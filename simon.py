@@ -2,7 +2,6 @@ from __future__ import print_function
 import RPi.GPIO as GPIO
 import random
 import time
-import sys
 
 # color = [red,green,blue]
 # hoping that we can vary the luminosity of each diode so that I

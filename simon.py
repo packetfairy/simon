@@ -45,6 +45,11 @@ config['rob'] = {'board': [purple, red, purple, blue],
 #LED_SETUP = [pin for led_pins in LEDS for pin in led_pins]
 # we are going to deal with LEDs via serial, rather than GPIO port toggle
 
+# actually, for our v0.1, we will use four standard color 100mm arcade buttons
+# assembled in some way so they are playable.
+LEDS = [4. 17, 27, 22]
+
+RESET = 21
 SENSORS = [18, 23, 24, 25]
 RFID = 12
 
@@ -56,6 +61,7 @@ def gpio_setup():
     # work perfectly? :)
     GPIO.setmode(GPIO.BCM)
     #GPIO.setup(LED_SETUP, GPIO.OUT)
+    GPIO.setup(LEDS, GPIO.OUT)
     GPIO.setup(SENSORS, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
     GPIO.setup(RFID, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 

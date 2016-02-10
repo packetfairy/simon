@@ -48,10 +48,9 @@ config['rob'] = {'board': [purple, red, purple, blue],
 # actually, for our v0.1, we will use four standard color 100mm arcade buttons
 # assembled in some way so they are playable.
 LEDS = [4. 17, 27, 22]
-
-RESET = 21
 SENSORS = [18, 23, 24, 25]
-RFID = 12
+RESET = 21
+# RFID = 12  # for the future
 
 
 def gpio_setup():
@@ -60,10 +59,10 @@ def gpio_setup():
     # I have done the right things and that everything will always
     # work perfectly? :)
     GPIO.setmode(GPIO.BCM)
-    #GPIO.setup(LED_SETUP, GPIO.OUT)
     GPIO.setup(LEDS, GPIO.OUT)
-    GPIO.setup(SENSORS, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-    GPIO.setup(RFID, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+    GPIO.setup(SENSORS, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    GPIO.setup(RESET, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    # GPIO.setup(RFID, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)  # for the future
 
 
 def playsound(sound):
@@ -79,12 +78,17 @@ def playsound(sound):
     print('')
 
 
+def light_led(led_position, duration):
+    GPIO.output(led_position, True)
+    time.sleep(duration)
+    GPIO.output(led_position, False)
+
+
 def playcolor(duration, color, led_position, sound):
     # send color to led_position via serial pulse; does this block?
     # if so, maybe play sound first via something which detaches?
-    #GPIO.output(color, True)
     playsound(sound)  # ensure sound file is sufficient length for LED to light
-    #GPIO.output(color, False)
+    light_led(led_position, duration)
 
 
 def read_rfid_port():
@@ -104,7 +108,7 @@ def celebrate():
     """i imagine running a full rainbow down the chain while playing
        some fun celebratory music. this would get used for that point
        where our player has reached the point where we thought they
-       would never ossibly reach"""
+       would never possibly reach"""
     return
 
 
@@ -205,4 +209,4 @@ if __name__ == '__main__':
         try:
             rungame(user)
         except KeyboardInterrupt:  # this would be taking a prompt from the "power" button
-            exit
+            exit                   # how can i capture a button press and convert it into an exception?

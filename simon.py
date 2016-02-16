@@ -1,5 +1,6 @@
 from __future__ import print_function
 import RPi.GPIO as GPIO
+import subprocess
 import random
 import time
 
@@ -20,20 +21,29 @@ purple = [120, 36, 255]
 magenta = [255, 36, 255]
 white = [255, 255, 255]
 
+# i think i'm going to use a single set of files for v1.0- certainly for testing
+show_sound = 'audio/show_sound.wav'
+play_sound = 'audio/play_sound.wav'
+fail_sound = 'audio/fail_sound.wav'
+over_sound = 'audio/over_sound.wav'
+pass_sound = 'audio/pass_sound.wav'
+
 # where will this live?
 config = {}
-config['standard'] = {'board': [red, yellow, blue, green],
+config['standard'] = {'board': ['red', 'green', 'blue', 'yellow'],
                       'difficulty': 1}
-config['brian'] = {'board': [blue, white, cyan, lightblue],
-                   'difficulty': 2}
-config['bryan'] = {'board': [red, white, pink, white],
-                   'difficulty': 3}
-config['erik'] = {'board': [yellow, white, orange, blue],
-                  'difficulty': 3}
-config['nate'] = {'board': [pink, magenta, cyan, white],
-                  'difficulty': 3}
-config['rob'] = {'board': [purple, red, purple, blue],
-                 'difficulty': 4}
+# config['standard'] = {'board': [red, yellow, blue, green],
+#                       'difficulty': 1}
+# config['brian'] = {'board': [blue, white, cyan, lightblue],
+#                    'difficulty': 2}
+# config['bryan'] = {'board': [red, white, pink, white],
+#                    'difficulty': 3}
+# config['erik'] = {'board': [yellow, white, orange, blue],
+#                   'difficulty': 3}
+# config['nate'] = {'board': [pink, magenta, cyan, white],
+#                   'difficulty': 3}
+# config['rob'] = {'board': [purple, red, purple, blue],
+#                  'difficulty': 4}
 
 # GPIO config details
 #LEDS = []
@@ -47,7 +57,7 @@ config['rob'] = {'board': [purple, red, purple, blue],
 
 # actually, for our v0.1, we will use four standard color 100mm arcade buttons
 # assembled in some way so they are playable.
-LEDS = [4. 17, 27, 22]
+LEDS = [4, 17, 27, 22]
 SENSORS = [18, 23, 24, 25]
 RESET = 21
 # RFID = 12  # for the future
@@ -62,33 +72,22 @@ def gpio_setup():
     GPIO.setup(LEDS, GPIO.OUT)
     GPIO.setup(SENSORS, GPIO.IN, pull_up_down=GPIO.PUD_UP)
     GPIO.setup(RESET, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-    # GPIO.setup(RFID, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)  # for the future
+    # GPIO.setup(RFID, GPIO.IN)  # for the future
 
 
-def playsound(sound):
+def playsound(sound_path):
     """play sound file to audio port"""
-    print('you could try using subprocess, but that may be expensive.')
-    print('')
-    print('here are some links to help integrate audio directly into the')
-    print('script via python libraries for when you are ready!')
-    print('')
-    print('http://stackoverflow.com/questions/17657103/how-to-play-wav-file-in-python')
-    print('http://stackoverflow.com/questions/260738/play-audio-with-python')
-    print('https://wiki.python.org/moin/Audio/')
-    print('')
+    subprocess.call(['play', '-q', sound_path])
 
 
-def light_led(led_position, duration):
-    GPIO.output(led_position, True)
-    time.sleep(duration)
-    GPIO.output(led_position, False)
-
-
-def playcolor(duration, color, led_position, sound):
+def playcolor(duration, color, led_position, sound_path):
     # send color to led_position via serial pulse; does this block?
     # if so, maybe play sound first via something which detaches?
-    playsound(sound)  # ensure sound file is sufficient length for LED to light
-    light_led(led_position, duration)
+    # for v1.0, we're using simple positional arguments
+    GPIO.output(LEDS[led_position], True)
+    playsound(sound_path)  # ensure sound file is sufficient length for LED to light
+    time.sleep(duration)
+    GPIO.output(LEDS[led_position], False)
 
 
 def read_rfid_port():
@@ -98,10 +97,7 @@ def read_rfid_port():
 
 
 def read_sensor_ports():
-    for s in SENSORS:
-        if GPIO.input(s) is True:
-            return SENSORS.index(s)
-    return False
+    return [GPIO.input(sensor) for sensor in SENSORS]
 
 
 def celebrate():
@@ -131,15 +127,15 @@ def play(color_sequence, count, user):
 
     # define sound file names
     # for when the color is being shown to you
-    show_sound = '%s/%02d_%s.wav' % (user, num, 'show')
+    # show_sound = '%s/%02d_%s.wav' % (user, num, 'show')
     # for when you select the correct color
-    play_sound = '%s/%02d_%s.wav' % (user, num, 'play')
+    # play_sound = '%s/%02d_%s.wav' % (user, num, 'play')
     # for when you select the wrong color
-    fail_sound = '%s/%02d_%s.wav' % (user, num, 'fail')
+    # fail_sound = '%s/%02d_%s.wav' % (user, num, 'fail')
     # for when your game ends
-    over_sound = '%s/%02d_%s.wav' % (user, num, 'over')
+    # over_sound = '%s/%02d_%s.wav' % (user, num, 'over')
     # for when you pass the round
-    pass_sound = '%s/%02d_%s.wav' % (user, num, 'pass')
+    # pass_sound = '%s/%02d_%s.wav' % (user, num, 'pass')
 
     # pick a new color
     board = config[user]['board']
@@ -158,7 +154,7 @@ def play(color_sequence, count, user):
     # set up a timer which increases incrementally, and variably
     # depending upon difficulty level
     playtime = 1 + (count * 0.5) + ((count * 0.25) / difficulty)
-    expired = time.time() + playtime
+    expired = time.time() + playtime + 10
 
     # example values:                 -----------------play time-----------------
     # | difficulty level | light time | c=1 | c=2 | c=3 | c=4 | c=5 | c=6 | c=7 |
@@ -173,20 +169,46 @@ def play(color_sequence, count, user):
     # mechanism of interaction with the devices. but we'll see.
 
     # wait for the user to enter the correct sequence
+    color_count = 0
     for color in color_sequence:
+        color_count += 1
+        print('playing %s' % color)
+        click = 0
         while time.time() < expired:
             sensor_port_response = read_sensor_ports()
-            if sensor_port_response:
-                if sensor_port_response != board.index(color):
+            # only evaluate clicks once
+            if click == 0:
+                if 0 in sensor_port_response:
+                    click = 1  # CLICK
+
+            if click == 1:
+                print('evaluating click %s' % sensor_port_response)
+                print('spr: %s, b: %s' % (sensor_port_response.index(0), board.index(color)))
+                if sensor_port_response.index(0) != board.index(color):
                     playcolor(led_duration, color, board.index(color), fail_sound)
                     return False, color_sequence
                 else:
                     playcolor(led_duration, color, board.index(color), play_sound)
+                    if len(color_sequence) == color_count:
+                        playsound(pass_sound)
+                        return True, color_sequence
+                click = 2
+
+            if click == 2:
+                if 0 not in sensor_port_response:
+                    click = 0
+
+            #if sensor_port_response != board.index(color):
+            #    playcolor(led_duration, color, board.index(color), fail_sound)
+            #    return False, color_sequence
+            #else:
+            #    playcolor(led_duration, color, board.index(color), play_sound)
+            #    if len(color_sequence) == color_count:
+            #        playsound(pass_sound)
+            #        return True, color_sequence
         else:
             playsound(over_sound)
             return False, color_sequence
-    playsound(pass_sound)
-    return True, color_sequence
 
 
 def rungame(user):
@@ -195,18 +217,25 @@ def rungame(user):
     color_sequence = []
     while winning is True:
         count += 1
+        print('count %s ENTER color sequence is %s' % (count,color_sequence))
         (winning, color_sequence) = play(color_sequence, count, user)
+        print('status %s EXIT color sequence is %s' % (winning, color_sequence))
     else:
         print('wah wah! you made it %s rounds!' % (count - 1))
+        print('final color sequence: %s' % color_sequence)
         print()
 
 
 if __name__ == '__main__':
+    playsound('./audio/start_sound.wav')
     gpio_setup()
     while True:
         # if RFID receiver registers USER nearby, set and send user as arg
+        # v1.0 won't be using that, so we are just getting 'standard' back
         user = read_rfid_port()
         try:
             rungame(user)
-        except KeyboardInterrupt:  # this would be taking a prompt from the "power" button
-            exit                   # how can i capture a button press and convert it into an exception?
+        except KeyboardInterrupt:  # this would be taking a prompt from the reset button
+            GPIO.cleanup()         #
+            exit                   # how can i capture a button press, and convert it
+                                   # into an exception?

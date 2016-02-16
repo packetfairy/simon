@@ -151,11 +151,14 @@ def play(color_sequence, count, board, difficulty):
     for color in color_sequence:
         # our LED position corresponds to the color index on the board
         playcolor(led_duration, color, board.index(color), show_sound)
+        # without this sleep, if we get two of the same color in a row,
+        # the LED does not toggle off between plays
+        time.sleep(0.1)
 
     # set up a timer which increases incrementally, and variably
     # depending upon difficulty level
     playtime = 1 + (count * 0.5) + ((count * 0.25) / difficulty)
-    expired = time.time() + playtime + 10  # i'm giving myself +10 for testing !!
+    expired = time.time() + playtime
 
     # example values:                 -----------------play time-----------------
     # | difficulty level | light time | c=1 | c=2 | c=3 | c=4 | c=5 | c=6 | c=7 |
@@ -215,6 +218,7 @@ def rungame(user):
     while winning is True:
         count += 1
         print('count %s ENTER color sequence is %s' % (count,color_sequence))
+        GPIO.output(LEDS, False)
         (winning, color_sequence) = play(color_sequence, count, board, difficulty)
         print('status %s EXIT color sequence is %s' % (winning, color_sequence))
     else:
@@ -224,15 +228,16 @@ def rungame(user):
 
 
 if __name__ == '__main__':
-    playsound('./audio/start_sound.wav')
     gpio_setup()
     while True:
         # if RFID receiver registers USER nearby, set and send user as arg
         # v1.0 won't be using that, so we are just getting 'standard' back
-        user = read_rfid_port()
-        try:
-            rungame(user)
-        except KeyboardInterrupt:  # this would be taking a prompt from the reset button
-            GPIO.cleanup()         #
-            exit                   # how can i capture a button press, and convert it
-                                   # into an exception?
+        if GPIO.input(21) == 0:
+            playsound('./audio/start_sound.wav')
+            user = read_rfid_port()
+            try:
+                rungame(user)
+            except KeyboardInterrupt:  # this would be taking a prompt from the reset button
+                GPIO.cleanup()         #
+                exit                   # how can i capture a button press, and convert it
+                                       # into an exception?

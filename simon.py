@@ -3,6 +3,7 @@ import RPi.GPIO as GPIO
 import subprocess
 import random
 import time
+import sys
 
 # color = [red,green,blue]
 # hoping that we can vary the luminosity of each diode so that I
@@ -27,6 +28,7 @@ play_sound = 'audio/play_sound.wav'
 fail_sound = 'audio/fail_sound.wav'
 over_sound = 'audio/over_sound.wav'
 pass_sound = 'audio/pass_sound.wav'
+high_sound = 'audio/high_sound.wav'
 
 # where will this live?
 config = {}
@@ -75,9 +77,14 @@ def gpio_setup():
     # GPIO.setup(RFID, GPIO.IN)  # for the future
 
 
-def playsound(sound_path):
+def block_playsound(sound_path):
+    """play sound file to audio port, pausing progress"""
+    return subprocess.call(['play', '-q', sound_path])
+
+
+def noblock_playsound(sound_path):
     """play sound file to audio port"""
-    subprocess.call(['play', '-q', sound_path])
+    return subprocess.Popen(['play', '-q', sound_path])
 
 
 def playcolor(duration, color, led_position, sound_path):
@@ -85,7 +92,7 @@ def playcolor(duration, color, led_position, sound_path):
     # if so, maybe play sound first via something which detaches?
     # for v1.0, we're using simple positional arguments
     GPIO.output(LEDS[led_position], True)
-    playsound(sound_path)  # ensure sound file is sufficient length for LED to light
+    play = noblock_playsound(sound_path)  # ensure sound file is sufficient length for LED to light
     time.sleep(duration)
     GPIO.output(LEDS[led_position], False)
 
@@ -105,7 +112,7 @@ def celebrate():
        some fun celebratory music. this would get used for that point
        where our player has reached the point where we thought they
        would never possibly reach"""
-    # playsound('audio/wins_sound.wav') ?
+    # block_playsound('audio/wins_sound.wav') ?
     return
 
 
@@ -127,17 +134,20 @@ def play(color_sequence, count, board, difficulty):
         num = 10
 
     # when we are using this, we need to include a user argument to play
+    #
     # define sound file names
     # for when the color is being shown to you
     # show_sound = '%s/%02d_%s.wav' % (user, num, 'show')
     # for when you select the correct color
     # play_sound = '%s/%02d_%s.wav' % (user, num, 'play')
-    # for when you select the wrong color
-    # fail_sound = '%s/%02d_%s.wav' % (user, num, 'fail')
-    # for when your game ends
-    # over_sound = '%s/%02d_%s.wav' % (user, num, 'over')
     # for when you pass the round
     # pass_sound = '%s/%02d_%s.wav' % (user, num, 'pass')
+    # for when you select the wrong color
+    # fail_sound = '%s/%s.wav' % (user, 'fail')
+    # for when your game ends
+    # over_sound = '%s/%s.wav' % (user, 'over')
+    # for when you the player takes the high score
+    # high_sound = '%s/%s.wav' % (user, 'high')
 
     # pick a new color
     select = random.choice(board)
@@ -197,7 +207,13 @@ def play(color_sequence, count, board, difficulty):
                 playcolor(led_duration, color, board.index(color), play_sound)
                 print('l: %s, s: %s, e: %s, c: %s' % (len(color_sequence), color_sequence, evaluate_sequence, color_count))
                 if len(color_sequence) == color_count:
-                    playsound(pass_sound)
+                    play = noblock_playsound(pass_sound)
+                    for x in range(count + 3):
+                        GPIO.output(LEDS, True)
+                        time.sleep(0.1)
+                        GPIO.output(LEDS, False)
+                        time.sleep(0.1)
+                    time.sleep(0.5)
                     return True, color_sequence
             click = 2  # SET CLICK AS READ
 
@@ -205,11 +221,12 @@ def play(color_sequence, count, board, difficulty):
             if 0 not in sensor_port_response:
                 click = 0  # CLICK-OFF
     else:
-        playsound(over_sound)
+        time.sleep(0.1)
+        play = block_playsound(over_sound)
         return False, color_sequence
 
 
-def rungame(user):
+def rungame(user, highscore):
     winning = True
     count = 0
     color_sequence = []
@@ -222,22 +239,49 @@ def rungame(user):
         (winning, color_sequence) = play(color_sequence, count, board, difficulty)
         print('status %s EXIT color sequence is %s' % (winning, color_sequence))
     else:
-        print('wah wah! you made it %s rounds!' % (count - 1))
+        score = count - 1
+        print('wah wah! you made it %s rounds!' % score)
         print('final color sequence: %s' % color_sequence)
+        if score > highscore:
+            print('congratulations! new high score: ', end='')
+            play = noblock_playsound(high_sound)
+            while play.poll() is None:
+                GPIO.output(LEDS, True)
+                time.sleep(0.1)
+                GPIO.output(LEDS, False)
+                time.sleep(0.1)
+            else:
+                GPIO.output(LEDS, False)
+                highscore = int(score)
+                print('%s' % highscore)
         print()
 
 
 if __name__ == '__main__':
     gpio_setup()
-    while True:
-        # if RFID receiver registers USER nearby, set and send user as arg
-        # v1.0 won't be using that, so we are just getting 'standard' back
-        if GPIO.input(21) == 0:
-            playsound('./audio/start_sound.wav')
-            user = read_rfid_port()
-            try:
-                rungame(user)
-            except KeyboardInterrupt:  # this would be taking a prompt from the reset button
-                GPIO.cleanup()         #
-                exit                   # how can i capture a button press, and convert it
-                                       # into an exception?
+    highscore = 0
+    try:
+        if sys.argv[1] == 'test':
+            GPIO.output(LEDS, True)
+            time.sleep(1)
+            GPIO.output(LEDS, False)
+            time.sleep(1)
+            GPIO.output(LEDS, True)
+            time.sleep(1)
+            GPIO.output(LEDS, False)
+            sys.exit(0)
+    except:
+        pass
+
+    try:
+        while True:
+            # if RFID receiver registers USER nearby, set and send user as arg
+            # v1.0 won't be using that, so we are just getting 'standard' back
+            if GPIO.input(21) == 0:
+                play = block_playsound('audio/start_sound.wav')
+                user = read_rfid_port()
+                rungame(user, highscore)
+    except KeyboardInterrupt:  # this would be taking a prompt from the reset button
+        GPIO.cleanup()         #
+        exit                   # how can i capture a button press, and convert
+                               # into an exception?

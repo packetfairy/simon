@@ -171,38 +171,39 @@ def play(color_sequence, count, board, difficulty):
 
     # wait for the user to enter the correct sequence
     color_count = 0
-    for color in color_sequence:
-        while time.time() < expired:
-            # print('playing %s' % color)
-            click = 0
-            sensor_port_response = read_sensor_ports()
-            # only evaluate clicks once
-            if click == 0:  # NO CLICK RECEIVED
-                if 0 in sensor_port_response:  # CLICK-ON
-                    click = 1  # SET CLICK TO BE READ
+    evaluate_sequence = list(color_sequence)
+    while time.time() < expired:
+        click = 0
+        sensor_port_response = read_sensor_ports()
+        if click == 0:  # NO CLICK RECEIVED
+            if 0 in sensor_port_response:  # CLICK-ON
+                click = 1  # SET CLICK TO BE READ
 
-            if click == 1:  # CLICK SET TO BE READ
-                # print('evaluating click %s' % sensor_port_response)
-                # print('spr: %s, b: %s' % (sensor_port_response.index(0), board.index(color)))
-                color_count += 1
-                if sensor_port_response.index(0) != board.index(color):
-                    print('you picked %s, should have picked %s' % (board[sensor_port_response.index(0)], color))
-                    playcolor(led_duration, color, board.index(color), fail_sound)
-                    return False, color_sequence
-                else:
-                    print('you picked %s' % board[sensor_port_response.index(0)])
-                    playcolor(led_duration, color, board.index(color), play_sound)
-                    if len(color_sequence) == color_count:
-                        playsound(pass_sound)
-                        return True, color_sequence
-                click = 2  # SET CLICK AS READ
+        if click == 1:  # CLICK SET TO BE READ
+            # print('evaluating click %s' % sensor_port_response)
+            # print('spr: %s, b: %s' % (sensor_port_response.index(0), board.index(color)))
+            print('l: %s, s: %s, e: %s, c: %s' % (len(color_sequence), color_sequence, evaluate_sequence, color_count))
+            color = evaluate_sequence.pop(0)
+            color_count += 1
+            if sensor_port_response.index(0) != board.index(color):
+                print('you picked %s, should have picked %s' % (board[sensor_port_response.index(0)], color))
+                playcolor(led_duration, color, board.index(color), fail_sound)
+                return False, color_sequence
+            else:
+                print('you picked %s' % board[sensor_port_response.index(0)])
+                playcolor(led_duration, color, board.index(color), play_sound)
+                print('l: %s, s: %s, e: %s, c: %s' % (len(color_sequence), color_sequence, evaluate_sequence, color_count))
+                if len(color_sequence) == color_count:
+                    playsound(pass_sound)
+                    return True, color_sequence
+            click = 2  # SET CLICK AS READ
 
-            if click == 2:  # CLICK SET AS READ
-                if 0 not in sensor_port_response:
-                    click = 0  # CLICK-OFF
-        else:
-            playsound(over_sound)
-            return False, color_sequence
+        if click == 2:  # CLICK SET AS READ
+            if 0 not in sensor_port_response:
+                click = 0  # CLICK-OFF
+    else:
+        playsound(over_sound)
+        return False, color_sequence
 
 
 def rungame(user):

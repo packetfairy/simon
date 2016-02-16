@@ -1,0 +1,13 @@
+import RPi.GPIO as GPIO
+
+LEDS = [4, 17, 27, 22]
+SENSORS = [18, 23, 24, 25]
+
+def gpio_setup():
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setup(LEDS, GPIO.OUT)
+    GPIO.setup(SENSORS, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
+
+
+GPIO.cleanup()

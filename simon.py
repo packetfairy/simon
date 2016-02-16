@@ -105,10 +105,11 @@ def celebrate():
        some fun celebratory music. this would get used for that point
        where our player has reached the point where we thought they
        would never possibly reach"""
+    # playsound('audio/wins_sound.wav') ?
     return
 
 
-def play(color_sequence, count, user):
+def play(color_sequence, count, board, difficulty):
     # ok, so, we want to do a thing where we play different sounds
     # during each round. but, at a certain point, if we have a
     # crazy badass player, we will eventually exhaust our available
@@ -120,11 +121,12 @@ def play(color_sequence, count, user):
     #
     # for now, we'll do it with a basic check.
     num = count
-    if count == 10:   # we'll assume we have only 10 sets of sound files,
+    if num == 10:   # we'll assume we have only 10 sets of sound files,
         celebrate()   # and that this game will be challenging enough that
-    elif count > 10:  # reaching level 10 will be unlikely.
+    elif num > 10:  # reaching level 10 will be unlikely.
         num = 10
 
+    # when we are using this, we need to include a user argument to play
     # define sound file names
     # for when the color is being shown to you
     # show_sound = '%s/%02d_%s.wav' % (user, num, 'show')
@@ -138,15 +140,14 @@ def play(color_sequence, count, user):
     # pass_sound = '%s/%02d_%s.wav' % (user, num, 'pass')
 
     # pick a new color
-    board = config[user]['board']
     select = random.choice(board)
     color_sequence.append(select)
 
     # set our difficulty level and length of time to light the LEDs
-    difficulty = config[user]['difficulty']
     led_duration = 0.1 + (0.25 / difficulty) - (difficulty/100.0)
 
-    # display the colors for the user
+    # display the color set for the user
+    print('color sequence: %s' % color_sequence)
     for color in color_sequence:
         # our LED position corresponds to the color index on the board
         playcolor(led_duration, color, board.index(color), show_sound)
@@ -154,7 +155,7 @@ def play(color_sequence, count, user):
     # set up a timer which increases incrementally, and variably
     # depending upon difficulty level
     playtime = 1 + (count * 0.5) + ((count * 0.25) / difficulty)
-    expired = time.time() + playtime + 10
+    expired = time.time() + playtime + 10  # i'm giving myself +10 for testing !!
 
     # example values:                 -----------------play time-----------------
     # | difficulty level | light time | c=1 | c=2 | c=3 | c=4 | c=5 | c=6 | c=7 |
@@ -171,41 +172,34 @@ def play(color_sequence, count, user):
     # wait for the user to enter the correct sequence
     color_count = 0
     for color in color_sequence:
-        color_count += 1
-        print('playing %s' % color)
-        click = 0
         while time.time() < expired:
+            # print('playing %s' % color)
+            click = 0
             sensor_port_response = read_sensor_ports()
             # only evaluate clicks once
-            if click == 0:
-                if 0 in sensor_port_response:
-                    click = 1  # CLICK
+            if click == 0:  # NO CLICK RECEIVED
+                if 0 in sensor_port_response:  # CLICK-ON
+                    click = 1  # SET CLICK TO BE READ
 
-            if click == 1:
-                print('evaluating click %s' % sensor_port_response)
-                print('spr: %s, b: %s' % (sensor_port_response.index(0), board.index(color)))
+            if click == 1:  # CLICK SET TO BE READ
+                # print('evaluating click %s' % sensor_port_response)
+                # print('spr: %s, b: %s' % (sensor_port_response.index(0), board.index(color)))
+                color_count += 1
                 if sensor_port_response.index(0) != board.index(color):
+                    print('you picked %s, should have picked %s' % (board[sensor_port_response.index(0)], color))
                     playcolor(led_duration, color, board.index(color), fail_sound)
                     return False, color_sequence
                 else:
+                    print('you picked %s' % board[sensor_port_response.index(0)])
                     playcolor(led_duration, color, board.index(color), play_sound)
                     if len(color_sequence) == color_count:
                         playsound(pass_sound)
                         return True, color_sequence
-                click = 2
+                click = 2  # SET CLICK AS READ
 
-            if click == 2:
+            if click == 2:  # CLICK SET AS READ
                 if 0 not in sensor_port_response:
-                    click = 0
-
-            #if sensor_port_response != board.index(color):
-            #    playcolor(led_duration, color, board.index(color), fail_sound)
-            #    return False, color_sequence
-            #else:
-            #    playcolor(led_duration, color, board.index(color), play_sound)
-            #    if len(color_sequence) == color_count:
-            #        playsound(pass_sound)
-            #        return True, color_sequence
+                    click = 0  # CLICK-OFF
         else:
             playsound(over_sound)
             return False, color_sequence
@@ -215,10 +209,12 @@ def rungame(user):
     winning = True
     count = 0
     color_sequence = []
+    board = config[user]['board']
+    difficulty = config[user]['difficulty']
     while winning is True:
         count += 1
         print('count %s ENTER color sequence is %s' % (count,color_sequence))
-        (winning, color_sequence) = play(color_sequence, count, user)
+        (winning, color_sequence) = play(color_sequence, count, board, difficulty)
         print('status %s EXIT color sequence is %s' % (winning, color_sequence))
     else:
         print('wah wah! you made it %s rounds!' % (count - 1))

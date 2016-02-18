@@ -93,7 +93,7 @@ def playcolor(duration, color, led_position, sound_path):
     # if so, maybe play sound first via something which detaches?
     # for v1.0, we're using simple positional arguments
     GPIO.output(LEDS[led_position], True)
-    play = noblock_playsound(sound_path)  # ensure sound file is sufficient length for LED to light
+    soundplay = noblock_playsound(sound_path)  # ensure sound file is sufficient length for LED to light
     time.sleep(duration)
     GPIO.output(LEDS[led_position], False)
 
@@ -208,7 +208,7 @@ def play(color_sequence, count, board, difficulty):
                 playcolor(led_duration, color, board.index(color), play_sound)
                 print('l: %s, s: %s, e: %s, c: %s' % (len(color_sequence), color_sequence, evaluate_sequence, color_count))
                 if len(color_sequence) == color_count:
-                    play = noblock_playsound(pass_sound)
+                    soundplay = noblock_playsound(pass_sound)
                     for x in range(count + 3):
                         GPIO.output(LEDS, True)
                         time.sleep(0.1)
@@ -223,7 +223,7 @@ def play(color_sequence, count, board, difficulty):
                 click = 0  # CLICK-OFF
     else:
         time.sleep(0.1)
-        play = block_playsound(over_sound)
+        soundplay = block_playsound(over_sound)
         return False, color_sequence
 
 
@@ -245,7 +245,7 @@ def rungame(user, highscore):
         print('final color sequence: %s' % color_sequence)
         if score > highscore:
             print('congratulations! new high score: ', end='')
-            play = noblock_playsound(high_sound)
+            soundplay = noblock_playsound(high_sound)
             while play.poll() is None:
                 GPIO.output(LEDS, True)
                 time.sleep(0.1)
@@ -283,7 +283,7 @@ if __name__ == '__main__':
             # v1.0 won't be using that, so we are just getting 'standard' back
             if GPIO.input(21) == 0:
                 GPIO.output(26, False)
-                play = block_playsound('audio/start_sound.wav')
+                soundplay = block_playsound('audio/start_sound.wav')
                 user = read_rfid_port()
                 rungame(user, highscore)
                 GPIO.output(26, True)

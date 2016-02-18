@@ -279,6 +279,7 @@ if __name__ == '__main__':
 
     try:
         while True:
+            GPIO.output(26, True)
             # if RFID receiver registers USER nearby, set and send user as arg
             # v1.0 won't be using that, so we are just getting 'standard' back
             if GPIO.input(21) == 0:
@@ -286,7 +287,6 @@ if __name__ == '__main__':
                 soundplay = block_playsound('audio/start_sound.wav')
                 user = read_rfid_port()
                 rungame(user, highscore)
-                GPIO.output(26, True)
     except KeyboardInterrupt:  # this would be taking a prompt from the reset button
         GPIO.cleanup()         #
         exit                   # how can i capture a button press, and convert

@@ -283,15 +283,9 @@ if __name__ == '__main__':
             if GPIO.input(21) == 0:
                 GPIO.output(26, False)
                 user = read_rfid_port()
-                start_sound = 'audio/%s/start_sound.wav' % user
-                show_sound = 'audio/%s/show_sound.wav' % user
-                play_sound = 'audio/%s/play_sound.wav' % user
-                fail_sound = 'audio/%s/fail_sound.wav' % user
-                over_sound = 'audio/%s/over_sound.wav' % user
-                pass_sound = 'audio/%s/pass_sound.wav' % user
-                high_sound = 'audio/%s/high_sound.wav' % user
+                sound_types = ['start', 'show', 'play', 'fail', 'over', 'pass', 'high']
+                sounds = {sound_type: 'audio/%s/%s_sound.wav' % (user, sound_type) for sound_type in sound_types}
                 soundplay = block_playsound(start_sound)
-
                 rungame(user, highscore)
     except KeyboardInterrupt:  # this would be taking a prompt from the reset button
         GPIO.cleanup()         #

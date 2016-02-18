@@ -115,7 +115,7 @@ def celebrate(high_sound):
        where our player has reached the point where we thought they
        would never possibly reach"""
     print('congratulations! new high score: ', end='')
-    soundplay = block_playsound(high_sound)
+    soundplay = noblock_playsound(high_sound)
     while soundplay.poll() is None:
         GPIO.output(LEDS, True)
         time.sleep(0.1)

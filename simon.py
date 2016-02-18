@@ -109,7 +109,7 @@ def read_sensor_ports():
     return [GPIO.input(sensor) for sensor in SENSORS]
 
 
-def celebrate(high_sound):
+def celebrate(high_sound, score):
     """i imagine running a full rainbow down the chain while playing
        some fun celebratory music. this would get used for that point
        where our player has reached the point where we thought they
@@ -256,7 +256,7 @@ def rungame(user, highscore, sounds):
         print('wah wah! you made it %s rounds!' % score)
         print('final color sequence: %s' % color_sequence)
         if score > highscore:
-            celebrate(sounds['high'])
+            celebrate(sounds['high'], score)
 
 
 if __name__ == '__main__':

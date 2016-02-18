@@ -287,7 +287,7 @@ if __name__ == '__main__':
                 sound_types = ['start', 'show', 'play', 'fail', 'over', 'pass', 'high']
                 sounds = {sound_type: 'audio/%s/%s_sound.wav' % (user, sound_type) for sound_type in sound_types}
                 soundplay = block_playsound(sounds['start'])
-                rungame(user, highscore, sounds)
+                rungame('standard', highscore, sounds)
     except KeyboardInterrupt:  # this would be taking a prompt from the reset button
         GPIO.cleanup()         #
         exit                   # how can i capture a button press, and convert

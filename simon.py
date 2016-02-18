@@ -61,7 +61,8 @@ config['standard'] = {'board': ['red', 'green', 'blue', 'yellow'],
 # assembled in some way so they are playable.
 LEDS = [4, 17, 27, 22]
 SENSORS = [18, 23, 24, 25]
-RESET = 21
+RESETLED = 26
+RESETSENSOR = 21
 # RFID = 12  # for the future
 
 
@@ -72,8 +73,9 @@ def gpio_setup():
     # work perfectly? :)
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(LEDS, GPIO.OUT)
+    GPIO.setup(RESETLED, GPIO.OUT)
     GPIO.setup(SENSORS, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-    GPIO.setup(RESET, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    GPIO.setup(RESETSENSOR, GPIO.IN, pull_up_down=GPIO.PUD_UP)
     # GPIO.setup(RFID, GPIO.IN)  # for the future
 
 
@@ -278,9 +280,11 @@ if __name__ == '__main__':
             # if RFID receiver registers USER nearby, set and send user as arg
             # v1.0 won't be using that, so we are just getting 'standard' back
             if GPIO.input(21) == 0:
+                GPIO.output(26, False)
                 play = block_playsound('audio/start_sound.wav')
                 user = read_rfid_port()
                 rungame(user, highscore)
+                GPIO.output(26, True)
     except KeyboardInterrupt:  # this would be taking a prompt from the reset button
         GPIO.cleanup()         #
         exit                   # how can i capture a button press, and convert

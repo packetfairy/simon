@@ -125,7 +125,7 @@ def celebrate():
     return
 
 
-defr play(color_sequence, count, board, difficulty):
+def play(color_sequence, count, board, difficulty):
     # ok, so, we want to do a thing where we play different sounds
     # during each round. but, at a certain point, if we have a
     # crazy badass player, we will eventually exhaust our available

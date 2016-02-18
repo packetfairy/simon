@@ -4,6 +4,7 @@ import subprocess
 import random
 import time
 import sys
+import os
 
 # color = [red,green,blue]
 # hoping that we can vary the luminosity of each diode so that I
@@ -21,14 +22,6 @@ blue = [36, 36, 255]
 purple = [120, 36, 255]
 magenta = [255, 36, 255]
 white = [255, 255, 255]
-
-# i think i'm going to use a single set of files for v1.0- certainly for testing
-show_sound = 'audio/show_sound.wav'
-play_sound = 'audio/play_sound.wav'
-fail_sound = 'audio/fail_sound.wav'
-over_sound = 'audio/over_sound.wav'
-pass_sound = 'audio/pass_sound.wav'
-high_sound = 'audio/high_sound.wav'
 
 # where will this live?
 config = {}
@@ -99,9 +92,14 @@ def playcolor(duration, color, led_position, sound_path):
 
 
 def read_rfid_port():
-    # poll RFID port for presence of tag;
-    # if it exists, return its ID, else:
-    return 'standard'
+    # once we can do so, poll RFID port for presence of tag;
+    # if it exists, return its ID, else return standard
+    # for now, we will do this by simply randomly selecting a
+    # directory of audio files to use
+    dirs = subprocess.Popen(['ls', '-1', './audio'],
+                            stdout=subprocess.PIPE).stdout.read())
+    options = dirs[:-1].split('\n')
+    return random.choice(options)
 
 
 def read_sensor_ports():
@@ -113,11 +111,21 @@ def celebrate():
        some fun celebratory music. this would get used for that point
        where our player has reached the point where we thought they
        would never possibly reach"""
-    # block_playsound('audio/wins_sound.wav') ?
+    print('congratulations! new high score: ', end='')
+    soundplay = noblock_playsound(high_sound)
+    while soundplay.poll() is None:
+        GPIO.output(LEDS, True)
+        time.sleep(0.1)
+        GPIO.output(LEDS, False)
+        time.sleep(0.1)
+    else:
+        GPIO.output(LEDS, False)
+        highscore = int(score)
+        print('%s' % highscore)
     return
 
 
-def play(color_sequence, count, board, difficulty):
+defr play(color_sequence, count, board, difficulty):
     # ok, so, we want to do a thing where we play different sounds
     # during each round. but, at a certain point, if we have a
     # crazy badass player, we will eventually exhaust our available
@@ -244,17 +252,7 @@ def rungame(user, highscore):
         print('wah wah! you made it %s rounds!' % score)
         print('final color sequence: %s' % color_sequence)
         if score > highscore:
-            print('congratulations! new high score: ', end='')
-            soundplay = noblock_playsound(high_sound)
-            while play.poll() is None:
-                GPIO.output(LEDS, True)
-                time.sleep(0.1)
-                GPIO.output(LEDS, False)
-                time.sleep(0.1)
-            else:
-                GPIO.output(LEDS, False)
-                highscore = int(score)
-                print('%s' % highscore)
+            celebrate()
 
 
 if __name__ == '__main__':
@@ -284,8 +282,16 @@ if __name__ == '__main__':
             # v1.0 won't be using that, so we are just getting 'standard' back
             if GPIO.input(21) == 0:
                 GPIO.output(26, False)
-                soundplay = block_playsound('audio/start_sound.wav')
                 user = read_rfid_port()
+                start_sound = 'audio/%s/start_sound.wav' % user
+                show_sound = 'audio/%s/show_sound.wav' % user
+                play_sound = 'audio/%s/play_sound.wav' % user
+                fail_sound = 'audio/%s/fail_sound.wav' % user
+                over_sound = 'audio/%s/over_sound.wav' % user
+                pass_sound = 'audio/%s/pass_sound.wav' % user
+                high_sound = 'audio/%s/high_sound.wav' % user
+                soundplay = block_playsound(start_sound)
+
                 rungame(user, highscore)
     except KeyboardInterrupt:  # this would be taking a prompt from the reset button
         GPIO.cleanup()         #

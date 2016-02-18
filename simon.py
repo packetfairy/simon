@@ -83,7 +83,6 @@ def block_playsound(sound_path):
     """play sound file to audio port, pausing progress"""
     return subprocess.call(['play', '-q', sound_path])
 
-
 def noblock_playsound(sound_path):
     """play sound file to audio port"""
     return subprocess.Popen(['play', '-q', sound_path])
@@ -256,7 +255,6 @@ def rungame(user, highscore):
                 GPIO.output(LEDS, False)
                 highscore = int(score)
                 print('%s' % highscore)
-        print()
 
 
 if __name__ == '__main__':
@@ -265,12 +263,16 @@ if __name__ == '__main__':
     try:
         if sys.argv[1] == 'test':
             GPIO.output(LEDS, True)
+            GPIO.output(RESETLED, True)
             time.sleep(1)
             GPIO.output(LEDS, False)
+            GPIO.output(RESETLED, False)
             time.sleep(1)
             GPIO.output(LEDS, True)
+            GPIO.output(RESETLED, True)
             time.sleep(1)
             GPIO.output(LEDS, False)
+            GPIO.output(RESETLED, False)
             sys.exit(0)
     except:
         pass

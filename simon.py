@@ -86,7 +86,10 @@ def playcolor(duration, color, led_position, sound_path):
     # if so, maybe play sound first via something which detaches?
     # for v1.0, we're using simple positional arguments
     GPIO.output(LEDS[led_position], True)
-    soundplay = noblock_playsound(sound_path)  # ensure sound file is sufficient length for LED to light
+    if 'fail' in sound_path:
+        soundplay = block_playsound(sound_path)
+    else:
+        soundplay = noblock_playsound(sound_path)
     time.sleep(duration)
     GPIO.output(LEDS[led_position], False)
 

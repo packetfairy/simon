@@ -97,7 +97,7 @@ def read_rfid_port():
     # for now, we will do this by simply randomly selecting a
     # directory of audio files to use
     dirs = subprocess.Popen(['ls', '-1', './audio'],
-                            stdout=subprocess.PIPE).stdout.read())
+                            stdout=subprocess.PIPE).stdout.read()
     options = dirs[:-1].split('\n')
     return random.choice(options)
 

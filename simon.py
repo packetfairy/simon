@@ -106,7 +106,7 @@ def read_sensor_ports():
     return [GPIO.input(sensor) for sensor in SENSORS]
 
 
-def celebrate():
+def celebrate(high_sound):
     """i imagine running a full rainbow down the chain while playing
        some fun celebratory music. this would get used for that point
        where our player has reached the point where we thought they
@@ -125,7 +125,7 @@ def celebrate():
     return
 
 
-def play(color_sequence, count, board, difficulty):
+def play(color_sequence, count, board, difficulty, sounds):
     # ok, so, we want to do a thing where we play different sounds
     # during each round. but, at a certain point, if we have a
     # crazy badass player, we will eventually exhaust our available
@@ -136,11 +136,11 @@ def play(color_sequence, count, board, difficulty):
     # we have for another one.
     #
     # for now, we'll do it with a basic check.
-    num = count
-    if num == 10:   # we'll assume we have only 10 sets of sound files,
-        celebrate()   # and that this game will be challenging enough that
-    elif num > 10:  # reaching level 10 will be unlikely.
-        num = 10
+    #num = count
+    #if num == 10:   # we'll assume we have only 10 sets of sound files,
+    #    celebrate()   # and that this game will be challenging enough that
+    #elif num > 10:  # reaching level 10 will be unlikely.
+    #    num = 10
 
     # when we are using this, we need to include a user argument to play
     #
@@ -169,7 +169,7 @@ def play(color_sequence, count, board, difficulty):
     print('color sequence: %s' % color_sequence)
     for color in color_sequence:
         # our LED position corresponds to the color index on the board
-        playcolor(led_duration, color, board.index(color), show_sound)
+        playcolor(led_duration, color, board.index(color), sounds['show'])
         # without this sleep, if we get two of the same color in a row,
         # the LED does not toggle off between plays
         time.sleep(0.1)
@@ -209,14 +209,14 @@ def play(color_sequence, count, board, difficulty):
             color_count += 1
             if sensor_port_response.index(0) != board.index(color):
                 print('you picked %s, should have picked %s' % (board[sensor_port_response.index(0)], color))
-                playcolor(led_duration, color, board.index(color), fail_sound)
+                playcolor(led_duration, color, board.index(color), sounds['fail'])
                 return False, color_sequence
             else:
                 print('you picked %s' % board[sensor_port_response.index(0)])
-                playcolor(led_duration, color, board.index(color), play_sound)
+                playcolor(led_duration, color, board.index(color), sounds['play'])
                 print('l: %s, s: %s, e: %s, c: %s' % (len(color_sequence), color_sequence, evaluate_sequence, color_count))
                 if len(color_sequence) == color_count:
-                    soundplay = noblock_playsound(pass_sound)
+                    soundplay = noblock_playsound(sounds['pass'])
                     for x in range(count + 3):
                         GPIO.output(LEDS, True)
                         time.sleep(0.1)
@@ -231,11 +231,11 @@ def play(color_sequence, count, board, difficulty):
                 click = 0  # CLICK-OFF
     else:
         time.sleep(0.1)
-        soundplay = block_playsound(over_sound)
+        soundplay = block_playsound(sounds['over'])
         return False, color_sequence
 
 
-def rungame(user, highscore):
+def rungame(user, highscore, sounds):
     winning = True
     count = 0
     color_sequence = []
@@ -245,14 +245,15 @@ def rungame(user, highscore):
         count += 1
         print('count %s ENTER color sequence is %s' % (count,color_sequence))
         GPIO.output(LEDS, False)
-        (winning, color_sequence) = play(color_sequence, count, board, difficulty)
+        (winning, color_sequence) = play(color_sequence, count, board,
+                                         difficulty, sounds)
         print('status %s EXIT color sequence is %s' % (winning, color_sequence))
     else:
         score = count - 1
         print('wah wah! you made it %s rounds!' % score)
         print('final color sequence: %s' % color_sequence)
         if score > highscore:
-            celebrate()
+            celebrate(sounds['high'])
 
 
 if __name__ == '__main__':
@@ -285,8 +286,8 @@ if __name__ == '__main__':
                 user = read_rfid_port()
                 sound_types = ['start', 'show', 'play', 'fail', 'over', 'pass', 'high']
                 sounds = {sound_type: 'audio/%s/%s_sound.wav' % (user, sound_type) for sound_type in sound_types}
-                soundplay = block_playsound(start_sound)
-                rungame(user, highscore)
+                soundplay = block_playsound(sounds['start'])
+                rungame(user, highscore, sounds)
     except KeyboardInterrupt:  # this would be taking a prompt from the reset button
         GPIO.cleanup()         #
         exit                   # how can i capture a button press, and convert

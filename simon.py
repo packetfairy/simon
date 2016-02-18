@@ -213,6 +213,7 @@ def play(color_sequence, count, board, difficulty, sounds):
             if sensor_port_response.index(0) != board.index(color):
                 print('you picked %s, should have picked %s' % (board[sensor_port_response.index(0)], color))
                 playcolor(led_duration, color, board.index(color), sounds['fail'])
+                soundplay = block_playsound(sounds['over'])
                 return False, color_sequence
             else:
                 print('you picked %s' % board[sensor_port_response.index(0)])

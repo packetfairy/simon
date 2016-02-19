@@ -7,9 +7,7 @@ import time
 import sys
 import os
 
-# color = [red,green,blue]
-# hoping that we can vary the luminosity of each diode so that I
-# can create more than just these seven colors.
+# colors, for future version
 pink = [255, 36, 120]
 red = [255, 36, 36]
 orange = [255, 120, 36]
@@ -41,18 +39,8 @@ config['standard'] = {'board': ['red', 'green', 'blue', 'yellow'],
 # config['rob'] = {'board': [purple, red, purple, blue],
 #                  'difficulty': 4}
 
-# GPIO config details
-#LEDS = []
-# LEDS.append([red,green,blue])
-#LEDS.append([4, 17, 27])
-#LEDS.append([22, 5, 6])
-#LEDS.append([13, 19, 26])
-#LEDS.append([16, 20, 21])
-#LED_SETUP = [pin for led_pins in LEDS for pin in led_pins]
-# we are going to deal with LEDs via serial, rather than GPIO port toggle
-
-# actually, for our v0.1, we will use four standard color 100mm arcade buttons
-# assembled in some way so they are playable.
+# for our v0.1, we will use four standard color 100mm arcade buttons
+# assembled so they are playable.
 LEDS = [4, 17, 27, 22]
 SENSORS = [18, 23, 24, 25]
 RESETLED = 26
@@ -61,10 +49,7 @@ RESETSENSOR = 21
 
 
 def gpio_setup():
-    # will I get useful returncodes out of the GPIO if things are
-    # misconfigured or nonoperational, or do I need to trust that
-    # I have done the right things and that everything will always
-    # work perfectly? :)
+    """setup GPIO ports; I wish there was a way to confirm this"""
     GPIO.setmode(GPIO.BCM)
     GPIO.setup(LEDS, GPIO.OUT)
     GPIO.setup(RESETLED, GPIO.OUT)
@@ -83,9 +68,12 @@ def noblock_playsound(sound_path):
 
 
 def playcolor(duration, color, led_position, sound_path):
+    """light the LED at led_position with color as specified (for when we are
+       sending that information!), and play the audio file as specified"""
     # send color to led_position via serial pulse; does this block?
     # if so, maybe play sound first via something which detaches?
-    # for v1.0, we're using simple positional arguments
+    #
+    # for v1.0, we're using simple positional arguments, so we don't care
     GPIO.output(LEDS[led_position], True)
     if 'fail' in sound_path:
         soundplay = block_playsound(sound_path)
@@ -96,6 +84,10 @@ def playcolor(duration, color, led_position, sound_path):
 
 
 def read_rfid_port():
+    """this will interact with some kind of sensor that can get ID details;
+       for now, it just looks to the audio directory, and returns the name
+       of a randomly chosen subdirectory which contains a complete set of
+       audio files"""
     # once we can do so, poll RFID port for presence of tag;
     # if it exists, return its ID, else return standard
     # for now, we will do this by simply randomly selecting a
@@ -107,6 +99,8 @@ def read_rfid_port():
 
 
 def read_sensor_ports():
+    """read through the sensors, and return an array containing their state;
+       1 indicates idle, 0 indicates engaged"""
     return [GPIO.input(sensor) for sensor in SENSORS]
 
 
@@ -114,7 +108,8 @@ def celebrate(high_sound, score):
     """i imagine running a full rainbow down the chain while playing
        some fun celebratory music. this would get used for that point
        where our player has reached the point where we thought they
-       would never possibly reach"""
+       would never possibly reach; for now, it can just play music
+       and blink the LEDs. ;)"""
     print('congratulations! new high score: ', end='')
     soundplay = noblock_playsound(high_sound)
     while soundplay.poll() is None:
@@ -130,43 +125,16 @@ def celebrate(high_sound, score):
 
 
 def play(color_sequence, count, board, difficulty, sounds):
-    # ok, so, we want to do a thing where we play different sounds
-    # during each round. but, at a certain point, if we have a
-    # crazy badass player, we will eventually exhaust our available
-    # set of sounds. so, we'll do a check here.
-    #
-    # if need be, we can do the check by os.path.isfile(), like in
-    # the case where we have more files in the set for one user than
-    # we have for another one.
-    #
-    # for now, we'll do it with a basic check.
-    #num = count
-    #if num == 10:   # we'll assume we have only 10 sets of sound files,
-    #    celebrate()   # and that this game will be challenging enough that
-    #elif num > 10:  # reaching level 10 will be unlikely.
-    #    num = 10
-
-    # when we are using this, we need to include a user argument to play
-    #
-    # define sound file names
-    # for when the color is being shown to you
-    # show_sound = '%s/%02d_%s.wav' % (user, num, 'show')
-    # for when you select the correct color
-    # play_sound = '%s/%02d_%s.wav' % (user, num, 'play')
-    # for when you pass the round
-    # pass_sound = '%s/%02d_%s.wav' % (user, num, 'pass')
-    # for when you select the wrong color
-    # fail_sound = '%s/%s.wav' % (user, 'fail')
-    # for when your game ends
-    # over_sound = '%s/%s.wav' % (user, 'over')
-    # for when you the player takes the high score
-    # high_sound = '%s/%s.wav' % (user, 'high')
-
+    """our main play function; takes the current color sequence, count,
+       board details, difficulty setting, and sound set, appends a new
+       color to the color sequence, plays out the current colors with
+       audio feedback, then waits for the user to input their choices"""
     # pick a new color
     select = random.choice(board)
     color_sequence.append(select)
 
     # set our difficulty level and length of time to light the LEDs
+    # could calculate this elsewhere and pass it as an argument.
     led_duration = 0.1 + (0.25 / difficulty) - (difficulty/100.0)
 
     # display the color set for the user
@@ -241,6 +209,7 @@ def play(color_sequence, count, board, difficulty, sounds):
 
 
 def rungame(user, highscore, sounds):
+    """instatntiate a new game"""
     winning = True
     count = 0
     color_sequence = []
@@ -262,23 +231,32 @@ def rungame(user, highscore, sounds):
             celebrate(sounds['high'], score)
     return score
 
+def ledtest():
+    GPIO.output(LEDS, True)
+    GPIO.output(RESETLED, True)
+    time.sleep(1)
+    GPIO.output(LEDS, False)
+    GPIO.output(RESETLED, False)
+    time.sleep(1)
+    GPIO.output(LEDS, True)
+    GPIO.output(RESETLED, True)
+    time.sleep(1)
+    GPIO.output(LEDS, False)
+    GPIO.output(RESETLED, False)
+    time.sleep(1)
+    GPIO.output(LEDS, True)
+    GPIO.output(RESETLED, True)
+    time.sleep(1)
+    GPIO.output(LEDS, False)
+    GPIO.output(RESETLED, False)
+
 
 if __name__ == '__main__':
     gpio_setup()
+    ledtest()
     highscore = 0
     try:
         if sys.argv[1] == 'test':
-            GPIO.output(LEDS, True)
-            GPIO.output(RESETLED, True)
-            time.sleep(1)
-            GPIO.output(LEDS, False)
-            GPIO.output(RESETLED, False)
-            time.sleep(1)
-            GPIO.output(LEDS, True)
-            GPIO.output(RESETLED, True)
-            time.sleep(1)
-            GPIO.output(LEDS, False)
-            GPIO.output(RESETLED, False)
             sys.exit(0)
     except:
         pass
@@ -295,7 +273,7 @@ if __name__ == '__main__':
                 sounds = {sound_type: '/home/pi/simon/audio/%s/%s_sound.wav' % (user, sound_type) for sound_type in sound_types}
                 soundplay = block_playsound(sounds['start'])
                 highscore = rungame('standard', highscore, sounds)
-    except KeyboardInterrupt:  # this would be taking a prompt from the reset button
+    except KeyboardInterrupt:  # this would be taking a prompt from the reset button maybe?
         GPIO.cleanup()         #
         exit                   # how can i capture a button press, and convert
                                # into an exception?

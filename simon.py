@@ -249,6 +249,28 @@ def ledtest():
     time.sleep(1)
     GPIO.output(LEDS, False)
     GPIO.output(RESETLED, False)
+    for color in range(len(LEDS)):
+        GPIO.output(LEDS[color], True)
+        on = True
+        while on == True:
+            click = 0
+            sensor_port_response = read_sensor_ports()
+            if click == 0:
+                if 0 in sensor_port_response:
+                    click = 1
+
+            if click == 1:
+                if sensor_port_response.index(0) == SENSORS[color]:
+                    GPIO.output(LEDS[color], False)
+                    on = False
+                    soundplay = block_playsound(sounds['over'])
+                click = 2
+
+            if click == 2:
+                if 0 not in sensor_port_response:
+                    click = 0
+        else:
+            print('checked LED %s' % color + 1)
 
 
 if __name__ == '__main__':

@@ -1,4 +1,17 @@
 #!/usr/bin/env python
+
+# TODO:
+#  - make it more portable
+#     - GPIO pins are statically declared (use config file?)
+#     - paths to audio files are statically declared
+#     - include option to use MIDI files, and distribute a default set?
+#     - user config data details are statically declared (-> config file)
+#  - make it handle errors better
+#  - option to play through audio sets sequentially instead of randomly
+#  - option to use one audio set specifically
+#  - function to install self as a service
+#  - serial for RGB
+
 from __future__ import print_function
 import RPi.GPIO as GPIO
 import subprocess
@@ -8,19 +21,26 @@ import sys
 import os
 
 # colors, for future version
-pink = [255, 36, 120]
-red = [255, 36, 36]
-orange = [255, 120, 36]
-yellow = [255, 255, 36]
-limegreen = [120, 255, 36]
-green = [36, 255, 36]
-lightgreen = [36, 255, 120]
-cyan = [36, 255, 255]
-lightblue = [36, 120, 255]
-blue = [36, 36, 255]
-purple = [120, 36, 255]
-magenta = [255, 36, 255]
-white = [255, 255, 255]
+pink = (255, 36, 120)
+red = (255, 36, 36)
+orange = (255, 120, 36)
+yellow = (255, 255, 36)
+limegreen = (120, 255, 36)
+green = (36, 255, 36)
+lightgreen = (36, 255, 120)
+cyan = (36, 255, 255)
+lightblue = (36, 120, 255)
+blue = (36, 36, 255)
+purple = (120, 36, 255)
+magenta = (255, 36, 255)
+white = (255, 255, 255)
+# get "all" combinations of these color values:
+# c = [255, 255, 255, 36, 36, 120]
+# import itertools
+# for x in range(0, len(c)+1):
+#   for subset in itertools.combinations(c, x):
+#     if len(subset) == 3:
+#       print subset
 
 # where will this live?
 config = {}
@@ -189,6 +209,8 @@ def play(color_sequence, count, board, difficulty, sounds):
                 playcolor(led_duration, color, board.index(color), sounds['play'])
                 print('l: %s, s: %s, e: %s, c: %s' % (len(color_sequence), color_sequence, evaluate_sequence, color_count))
                 if len(color_sequence) == color_count:
+                    # TODO: make the blinking of these LEDs count on the play
+                    #       state in case a pass sound is too long.
                     soundplay = noblock_playsound(sounds['pass'])
                     for x in range(count + 3):
                         GPIO.output(LEDS, True)

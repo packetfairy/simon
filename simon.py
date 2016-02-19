@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from __future__ import print_function
 import RPi.GPIO as GPIO
 import subprocess
@@ -99,7 +100,7 @@ def read_rfid_port():
     # if it exists, return its ID, else return standard
     # for now, we will do this by simply randomly selecting a
     # directory of audio files to use
-    dirs = subprocess.Popen(['ls', '-1', './audio'],
+    dirs = subprocess.Popen(['ls', '-1', '/home/pi/simon/audio'],
                             stdout=subprocess.PIPE).stdout.read()
     options = dirs[:-1].split('\n')
     return random.choice(options)
@@ -291,7 +292,7 @@ if __name__ == '__main__':
                 GPIO.output(26, False)
                 user = read_rfid_port()
                 sound_types = ['start', 'show', 'play', 'fail', 'over', 'pass', 'high']
-                sounds = {sound_type: 'audio/%s/%s_sound.wav' % (user, sound_type) for sound_type in sound_types}
+                sounds = {sound_type: '/home/pi/simon/audio/%s/%s_sound.wav' % (user, sound_type) for sound_type in sound_types}
                 soundplay = block_playsound(sounds['start'])
                 highscore = rungame('standard', highscore, sounds)
     except KeyboardInterrupt:  # this would be taking a prompt from the reset button

@@ -260,17 +260,17 @@ def ledtest():
                     click = 1
 
             if click == 1:
-                if sensor_port_response.index(0) == SENSORS[color]:
+                if sensor_port_response.index(0) == color:
                     GPIO.output(LEDS[color], False)
                     on = False
-                    soundplay = block_playsound(sounds['over'])
+                    soundplay = block_playsound('/home/pi/simon/audio/soundcheck.wav')
                 click = 2
 
             if click == 2:
                 if 0 not in sensor_port_response:
                     click = 0
         else:
-            print('checked LED %s' % color + 1)
+            print('checked switch %s' % color)
 
 
 if __name__ == '__main__':

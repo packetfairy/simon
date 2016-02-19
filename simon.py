@@ -227,9 +227,9 @@ def rungame(user, highscore, sounds):
         print('wah wah! you made it %s rounds!' % score)
         print('final color sequence: %s' % color_sequence)
         if score > highscore:
-            print('previous high score: %s' % highscore)
             celebrate(sounds['high'], score)
-    return score
+            highscore = int(score)
+    return highscore
 
 def ledtest():
     GPIO.output(LEDS, True)

@@ -1,20 +1,40 @@
 #!/usr/bin/env python
 
+# so far, the only comment i've received from players is that they want it to
+# be more responsive. they want to be able to tap the next button IMMEDIATELY
+# after they stop pressing the current one, but we have delays which result in
+# false negatives if players are running too fast.
+
+# i may also like to find a way to make the randomizer select harder sequences.
+# while we were playing, i saw a LOT of:
+#   - multiple occurrences of the same color in a row (eg: five greens)
+#   - simply tracing along the perimeter over and over
+#   - double tracing along the perimeter (eg: 2x, 2y, 2z, 2a)
+# i suppose the nature of randomness is that, if you flip a coin for eternity,
+# you WILL, eventually, get a run of a trillion heads in a row...... but we're
+# not interested in eternity, and a game of a trillion reds in a row would be
+# really fucking dull.
+
 # TODO:
 #  - make it more portable
 #     - GPIO pins are statically declared (use config file?)
 #     - paths to audio files are statically declared
 #     - include option to use MIDI files, and distribute a default set?
 #     - user config data details are statically declared (-> config file)
-#  - make it handle errors better
-#  - option to play through audio sets sequentially instead of randomly
-#  - option to use one audio set specifically
+#  - make it handle errors
+#  - option to play through audio sets sequentially instead of randomly (harder
+#    because of how we are selecting directories; will need to either return a
+#    set of directories, or keep the state)
 #  - function to install self as a service
 #  - serial for RGB
 
 from __future__ import print_function
-import RPi.GPIO as GPIO
+try:
+    import RPi.GPIO as GPIO
+except ImportError:
+    print('cannot find RPi.GPIO; you will not be able to do much, but ok!')
 import subprocess
+import argparse
 import random
 import time
 import sys
@@ -103,7 +123,7 @@ def playcolor(duration, color, led_position, sound_path):
     GPIO.output(LEDS[led_position], False)
 
 
-def read_rfid_port():
+def read_rfid_port(args):
     """this will interact with some kind of sensor that can get ID details;
        for now, it just looks to the audio directory, and returns the name
        of a randomly chosen subdirectory which contains a complete set of
@@ -112,7 +132,16 @@ def read_rfid_port():
     # if it exists, return its ID, else return standard
     # for now, we will do this by simply randomly selecting a
     # directory of audio files to use
-    dirs = subprocess.Popen(['ls', '-1', '/home/pi/simon/audio'],
+    basedir = '/home/pi/simon/audio'
+    if args.soundset:
+        if os.isdir(args.soundset):
+            return args.soundset
+        elif os.isdir('%s/%s' % (basedir, args.soundset)):
+            return '%s/%s' % (basedir, args.soundset)
+        else:
+            print('could not find sound set at %s '
+                  '(also checked %s)' % (args.soundset, basedir))
+    dirs = subprocess.Popen(['ls', '-1', basedir],
                             stdout=subprocess.PIPE).stdout.read()
     options = dirs[:-1].split('\n')
     return random.choice(options)
@@ -285,7 +314,7 @@ def ledtest():
                 if sensor_port_response.index(0) == color:
                     GPIO.output(LEDS[color], False)
                     on = False
-                    soundplay = block_playsound('/home/pi/simon/audio/soundcheck.wav')
+                    soundplay = block_playsound('/home/pi/simon/soundcheck.wav')
                 click = 2
 
             if click == 2:
@@ -295,7 +324,15 @@ def ledtest():
             print('checked switch %s' % color)
 
 
+def parse_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--set', dest='soundset', action='store',
+                        help='select a specific sound set by directory name')
+    return parser.parse_args()
+
+
 if __name__ == '__main__':
+    args = parse_args()
     gpio_setup()
     ledtest()
     highscore = 0
@@ -312,7 +349,7 @@ if __name__ == '__main__':
             # v1.0 won't be using that, so we are just getting 'standard' back
             if GPIO.input(21) == 0:
                 GPIO.output(26, False)
-                user = read_rfid_port()
+                user = read_rfid_port(args)
                 sound_types = ['start', 'show', 'play', 'fail', 'over', 'pass', 'high']
                 sounds = {sound_type: '/home/pi/simon/audio/%s/%s_sound.wav' % (user, sound_type) for sound_type in sound_types}
                 soundplay = block_playsound(sounds['start'])

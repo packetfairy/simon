@@ -41,6 +41,7 @@ import sys
 import os
 
 # colors, for future version
+off = (0, 0, 0)
 pink = (255, 36, 120)
 red = (255, 36, 36)
 orange = (255, 120, 36)
